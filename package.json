@@ -1,0 +1,41 @@
+{
+    "name":  "a2a",
+    "version":  "0.1.0",
+    "private":  true,
+    "description":  "A2A Protocol — Agent-to-Agent communication platform",
+    "type":  "module",
+    "scripts":  {
+                    "dev":  "turbo dev",
+                    "build":  "turbo build",
+                    "lint":  "turbo lint",
+                    "format":  "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+                    "format:check":  "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+                    "typecheck":  "turbo typecheck",
+                    "clean":  "turbo clean",
+                    "db:generate":  "node db.mjs generate",
+                    "db:push":  "node db.mjs push",
+                    "db:migrate":  "node db.mjs migrate",
+                    "db:studio":  "node db.mjs studio",
+                    "db:seed":  "node db.mjs seed"
+                },
+    "devEngines":  {
+                       "packageManager":  {
+                                              "name":  "pnpm",
+                                              "version":  "^11.11.0",
+                                              "onFail":  "download"
+                                          }
+                   },
+    "packageManager":  "pnpm@11.11.0",
+    "engines":  {
+                    "node":  "\u003e=20"
+                },
+    "devDependencies":  {
+                            "@eslint/js":  "^10.0.1",
+                            "eslint":  "^10.6.0",
+                            "prettier":  "^3.9.5",
+                            "tsx":  "^4.23.0",
+                            "turbo":  "^2.10.4",
+                            "typescript":  "^7.0.2",
+                            "typescript-eslint":  "^8.63.0"
+                        }
+}
