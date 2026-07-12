@@ -3,12 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "scripts": {
-    "build": "hardhat compile && tsc",
-    "lint": "eslint src/",
-    "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist artifacts cache"
+    "build": "forge build",
+    "test": "forge test",
+    "test:ci": "FOUNDRY_PROFILE=ci forge test",
+    "test:gas": "forge test --gas-report",
+    "lint": "forge fmt --check",
+    "fmt": "forge fmt",
+    "clean": "forge clean",
+    "deploy:fuji": "forge script script/Deploy.s.sol --rpc-url fuji --broadcast --verify",
+    "deploy:base-sepolia": "forge script script/Deploy.s.sol --rpc-url base-sepolia --broadcast --verify"
   }
 }
