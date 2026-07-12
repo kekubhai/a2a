@@ -1,0 +1,10 @@
+[workspace]
+members = [
+    "programs/agent_registry",
+    "programs/task_registry",
+    "programs/verification_oracle",
+]
+resolver = "2"
+
+[workspace.metadata.anchor]
+anchor-version = "0.30.1"
