@@ -14,3 +14,18 @@ export {
   verificationOracleIdl,
   type Idl,
 } from './idl.js';
+
+// Chain-abstracted client
+export {
+  A2AClientFactory,
+  ChainAbstractedClient,
+  type A2AClient,
+  type ClientConfig,
+  type PostTaskParams,
+  type PostTaskResult,
+  type SubmitBidParams,
+  type SubmitBidResult,
+  type ReleaseEscrowParams,
+  type ReleaseEscrowResult,
+  type AgentReputation,
+} from './client/index.js';
