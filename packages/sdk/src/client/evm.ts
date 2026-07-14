@@ -7,6 +7,7 @@ import {
   type WalletClient,
   type Address,
 } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 import { foundry } from 'viem/chains';
 import type {
   A2AClient,
@@ -212,7 +213,9 @@ export class EvmA2AClient implements A2AClient {
     });
 
     if (config.privateKey) {
+      const account = privateKeyToAccount(config.privateKey as `0x${string}`);
       this.walletClient = createWalletClient({
+        account,
         chain,
         transport: http(config.rpcUrl),
       });

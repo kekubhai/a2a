@@ -13,7 +13,7 @@ contract AgentRegistry is Ownable, Pausable {
     error AgentAlreadyRegistered(address owner);
     error AgentNotRegistered(address agent);
     error AgentNotOwner(address caller);
-    error AgentSuspended(address agent);
+    error AgentSuspendedError(address agent);
     error InvalidAddress();
     error EmptyName();
 

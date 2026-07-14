@@ -46,7 +46,7 @@ contract TaskRegistryTest is Test {
         TaskRegistry.Task memory t = taskRegistry.getTask(taskId);
         assertEq(t.buyerAgent, buyer);
         assertEq(t.bounty, BOUNTY);
-        assertEq(t.status, TaskRegistry.Status.Open);
+        assertEq(uint8(t.status), uint8(TaskRegistry.Status.Open));
         assertTrue(bytes(t.acceptanceCriteriaHash).length > 0);
     }
 
@@ -73,7 +73,7 @@ contract TaskRegistryTest is Test {
         vm.prank(buyer);
         taskRegistry.assignTask(taskId, worker);
 
-        assertEq(taskRegistry.getTaskStatus(taskId), TaskRegistry.Status.Assigned);
+        assertEq(uint8(taskRegistry.getTaskStatus(taskId)), uint8(TaskRegistry.Status.Assigned));
         assertEq(taskRegistry.getTask(taskId).workerAgent, worker);
     }
 
@@ -100,7 +100,7 @@ contract TaskRegistryTest is Test {
         vm.prank(worker);
         taskRegistry.submitTask(taskId, "QmSubmission");
 
-        assertEq(taskRegistry.getTaskStatus(taskId), TaskRegistry.Status.Submitted);
+        assertEq(uint8(taskRegistry.getTaskStatus(taskId)), uint8(TaskRegistry.Status.Submitted));
         assertEq(taskRegistry.getTask(taskId).submittedAt > 0, true);
     }
 
@@ -135,7 +135,7 @@ contract TaskRegistryTest is Test {
         vm.prank(buyer);
         taskRegistry.completeTask(taskId);
 
-        assertEq(taskRegistry.getTaskStatus(taskId), TaskRegistry.Status.Completed);
+        assertEq(uint8(taskRegistry.getTaskStatus(taskId)), uint8(TaskRegistry.Status.Completed));
         assertEq(worker.balance - workerBalanceBefore, BOUNTY);
         assertEq(taskRegistry.getTaskEscrow(taskId), 0);
     }
@@ -168,7 +168,7 @@ contract TaskRegistryTest is Test {
         vm.prank(buyer);
         taskRegistry.failTask(taskId);
 
-        assertEq(taskRegistry.getTaskStatus(taskId), TaskRegistry.Status.Failed);
+        assertEq(uint8(taskRegistry.getTaskStatus(taskId)), uint8(TaskRegistry.Status.Failed));
         assertEq(buyer.balance - buyerBalanceBefore, BOUNTY);
         assertEq(taskRegistry.getTaskEscrow(taskId), 0);
     }
@@ -186,7 +186,7 @@ contract TaskRegistryTest is Test {
         vm.prank(buyer);
         taskRegistry.cancelTask(taskId);
 
-        assertEq(taskRegistry.getTaskStatus(taskId), TaskRegistry.Status.Cancelled);
+        assertEq(uint8(taskRegistry.getTaskStatus(taskId)), uint8(TaskRegistry.Status.Cancelled));
         assertEq(buyer.balance - buyerBalanceBefore, BOUNTY);
     }
 
@@ -223,7 +223,7 @@ contract TaskRegistryTest is Test {
         vm.prank(buyer);
         taskRegistry.refundAfterDeadline(taskId);
 
-        assertEq(taskRegistry.getTaskStatus(taskId), TaskRegistry.Status.Failed);
+        assertEq(uint8(taskRegistry.getTaskStatus(taskId)), uint8(TaskRegistry.Status.Failed));
         assertEq(buyer.balance - buyerBalanceBefore, BOUNTY);
     }
 

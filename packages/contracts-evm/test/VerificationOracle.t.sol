@@ -36,7 +36,7 @@ contract VerificationOracleTest is Test {
         VerificationOracle.Verification memory v = oracle.getVerification(vid);
         assertEq(v.taskId, 1);
         assertEq(v.verifierAgent, verifier);
-        assertEq(v.result, VerificationOracle.Result.Approved);
+        assertEq(uint8(v.result), uint8(VerificationOracle.Result.Approved));
         assertEq(v.confidence, 9500);
         assertEq(v.attestationHash, "QmAttestation");
         assertEq(v.signature, "0xsig");
@@ -70,7 +70,7 @@ contract VerificationOracleTest is Test {
         oracle.raiseDispute(vid, "Incorrect verification");
 
         VerificationOracle.Verification memory v = oracle.getVerification(vid);
-        assertEq(v.result, VerificationOracle.Result.Disputed);
+        assertEq(uint8(v.result), uint8(VerificationOracle.Result.Disputed));
         assertEq(v.disputeReason, "Incorrect verification");
     }
 
@@ -84,7 +84,7 @@ contract VerificationOracleTest is Test {
         oracle.resolveDispute(vid, uint8(VerificationOracle.Result.Rejected), "Resolved");
 
         VerificationOracle.Verification memory v = oracle.getVerification(vid);
-        assertEq(v.result, VerificationOracle.Result.Rejected);
+        assertEq(uint8(v.result), uint8(VerificationOracle.Result.Rejected));
         assertEq(v.disputeResolution, "Resolved");
     }
 

@@ -24,6 +24,8 @@ contract TaskRegistry is Ownable, ReentrancyGuard, Pausable {
     error InvalidStatusTransition();
     error Unauthorized();
     error InvalidAddress();
+    error EscrowTransferFailed();
+    error InsufficientBalance();
 
     // -------------------------------------------------------------------
     //  Events
@@ -73,7 +75,7 @@ contract TaskRegistry is Ownable, ReentrancyGuard, Pausable {
     // -------------------------------------------------------------------
     //  State
     // -------------------------------------------------------------------
-    IagentRegistry public agentRegistry;
+    IAgentRegistry public agentRegistry;
     uint256 public nextTaskId;
     mapping(uint256 => Task) private _tasks;
 
@@ -99,7 +101,7 @@ contract TaskRegistry is Ownable, ReentrancyGuard, Pausable {
     //  Constructor
     // -------------------------------------------------------------------
     constructor(address _agentRegistry) Ownable(msg.sender) {
-        agentRegistry = IagentRegistry(_agentRegistry);
+        agentRegistry = IAgentRegistry(_agentRegistry);
     }
 
     // -------------------------------------------------------------------
@@ -194,7 +196,7 @@ contract TaskRegistry is Ownable, ReentrancyGuard, Pausable {
         agentRegistry.recordCompletion(t.workerAgent);
 
         (bool sent, ) = payable(t.workerAgent).call{value: bounty}("");
-        if (!sent) revert EscrowReleased(taskId, t.workerAgent, bounty);
+        if (!sent) revert EscrowTransferFailed();
 
         emit TaskCompleted(taskId);
         emit EscrowReleased(taskId, t.workerAgent, bounty);
@@ -222,7 +224,7 @@ contract TaskRegistry is Ownable, ReentrancyGuard, Pausable {
         agentRegistry.recordFailure(t.workerAgent);
 
         (bool sent, ) = payable(t.buyerAgent).call{value: bounty}("");
-        if (!sent) revert EscrowRefunded(taskId, t.buyerAgent, bounty);
+        if (!sent) revert EscrowTransferFailed();
 
         emit TaskFailed(taskId);
         emit EscrowRefunded(taskId, t.buyerAgent, bounty);
@@ -244,7 +246,7 @@ contract TaskRegistry is Ownable, ReentrancyGuard, Pausable {
         t.bounty = 0;
 
         (bool sent, ) = payable(t.buyerAgent).call{value: bounty}("");
-        if (!sent) revert EscrowRefunded(taskId, t.buyerAgent, bounty);
+        if (!sent) revert EscrowTransferFailed();
 
         emit TaskCancelled(taskId);
         emit EscrowRefunded(taskId, t.buyerAgent, bounty);
@@ -269,7 +271,7 @@ contract TaskRegistry is Ownable, ReentrancyGuard, Pausable {
         t.bounty = 0;
 
         (bool sent, ) = payable(t.buyerAgent).call{value: bounty}("");
-        if (!sent) revert EscrowRefunded(taskId, t.buyerAgent, bounty);
+        if (!sent) revert EscrowTransferFailed();
 
         emit TaskFailed(taskId);
         emit EscrowRefunded(taskId, t.buyerAgent, bounty);

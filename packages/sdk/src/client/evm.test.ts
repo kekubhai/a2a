@@ -46,10 +46,10 @@ describe('EvmA2AClient', () => {
 
   it('should deploy contracts and register agents', async () => {
     const { bytecode: agentRegistryBytecode } = await import(
-      '../../contracts-evm/out/AgentRegistry.sol/AgentRegistry.json'
+      '../../../contracts-evm/out/AgentRegistry.sol/AgentRegistry.json'
     );
     const { bytecode: taskRegistryBytecode } = await import(
-      '../../contracts-evm/out/TaskRegistry.sol/TaskRegistry.json'
+      '../../../contracts-evm/out/TaskRegistry.sol/TaskRegistry.json'
     );
 
     const deployAgentRegistry = await walletClient.deployContract({
