@@ -19,6 +19,10 @@ import type {
   ReleaseEscrowParams,
   ReleaseEscrowResult,
   AgentReputation,
+  SubmitVerificationParams,
+  SubmitVerificationResult,
+  RaiseDisputeParams,
+  RaiseDisputeResult,
 } from './types.js';
 
 const AGENT_REGISTRY_ABI = [
@@ -194,9 +198,82 @@ const TASK_REGISTRY_ABI = [
   },
 ] as const;
 
+const VERIFICATION_ORACLE_ABI = [
+  {
+    type: 'function',
+    name: 'submitVerification',
+    inputs: [
+      { name: 'taskId', type: 'uint256' },
+      { name: 'verifierAgent', type: 'address' },
+      { name: 'result', type: 'uint8' },
+      { name: 'confidence', type: 'uint256' },
+      { name: 'attestationHash', type: 'string' },
+      { name: 'signature', type: 'string' },
+      { name: 'signatureAlgorithm', type: 'string' },
+    ],
+    outputs: [{ name: 'verificationId', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'raiseDispute',
+    inputs: [
+      { name: 'verificationId', type: 'uint256' },
+      { name: 'reason', type: 'string' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'getVerification',
+    inputs: [{ name: 'verificationId', type: 'uint256' }],
+    outputs: [
+      {
+        type: 'tuple',
+        components: [
+          { name: 'taskId', type: 'uint256' },
+          { name: 'verifierAgent', type: 'address' },
+          { name: 'result', type: 'uint8' },
+          { name: 'confidence', type: 'uint256' },
+          { name: 'attestationHash', type: 'string' },
+          { name: 'signature', type: 'string' },
+          { name: 'signatureAlgorithm', type: 'string' },
+          { name: 'disputeReason', type: 'string' },
+          { name: 'disputeResolution', type: 'string' },
+          { name: 'verifiedAt', type: 'uint256' },
+          { name: 'createdAt', type: 'uint256' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'event',
+    name: 'VerificationSubmitted',
+    inputs: [
+      { name: 'verificationId', type: 'uint256', indexed: true },
+      { name: 'taskId', type: 'uint256', indexed: true },
+      { name: 'verifierAgent', type: 'address', indexed: true },
+      { name: 'result', type: 'uint8' },
+      { name: 'attestationHash', type: 'string' },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'DisputeRaised',
+    inputs: [
+      { name: 'verificationId', type: 'uint256', indexed: true },
+      { name: 'taskId', type: 'uint256', indexed: true },
+      { name: 'reason', type: 'string' },
+    ],
+  },
+] as const;
+
 export interface EvmClientAddresses {
   agentRegistry: Address;
   taskRegistry: Address;
+  verificationOracle: Address;
 }
 
 export class EvmA2AClient implements A2AClient {
@@ -222,12 +299,13 @@ export class EvmA2AClient implements A2AClient {
     }
 
     if (!config.programIds) {
-      throw new Error('programIds (agentRegistry, taskRegistry) are required for EVM client');
+      throw new Error('programIds (agentRegistry, taskRegistry, verificationOracle) are required for EVM client');
     }
 
     this.addresses = {
       agentRegistry: config.programIds.agentRegistry as Address,
       taskRegistry: config.programIds.taskRegistry as Address,
+      verificationOracle: config.programIds.verificationOracle as Address,
     };
   }
 
@@ -340,5 +418,70 @@ export class EvmA2AClient implements A2AClient {
       tasksCompleted: agent.tasksCompleted,
       tasksFailed: agent.tasksFailed,
     };
+  }
+
+  async submitVerification(params: SubmitVerificationParams): Promise<SubmitVerificationResult> {
+    const account = this.getAccount();
+    const { request } = await this.publicClient.simulateContract({
+      address: this.addresses.verificationOracle,
+      abi: VERIFICATION_ORACLE_ABI,
+      functionName: 'submitVerification',
+      args: [
+        BigInt(params.taskId),
+        params.verifierAgent as Address,
+        params.result,
+        params.confidence,
+        params.attestationHash,
+        params.signature,
+        params.signatureAlgorithm,
+      ],
+      account: account.address,
+    });
+
+    const txHash = await this.walletClient!.writeContract({
+      ...request,
+      chain: foundry,
+    });
+
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash: txHash });
+
+    const logs = receipt.logs.filter(
+      (log) => log.address.toLowerCase() === this.addresses.verificationOracle.toLowerCase(),
+    );
+
+    if (logs.length === 0) {
+      throw new Error('VerificationSubmitted event not found in transaction receipt');
+    }
+
+    const decoded = decodeEventLog({
+      abi: VERIFICATION_ORACLE_ABI,
+      eventName: 'VerificationSubmitted',
+      data: logs[0].data,
+      topics: logs[0].topics,
+    });
+
+    return {
+      verificationId: decoded.args.verificationId.toString(),
+      txHash,
+    };
+  }
+
+  async raiseDispute(params: RaiseDisputeParams): Promise<RaiseDisputeResult> {
+    const account = this.getAccount();
+    const { request } = await this.publicClient.simulateContract({
+      address: this.addresses.verificationOracle,
+      abi: VERIFICATION_ORACLE_ABI,
+      functionName: 'raiseDispute',
+      args: [BigInt(params.verificationId), params.reason],
+      account: account.address,
+    });
+
+    const txHash = await this.walletClient!.writeContract({
+      ...request,
+      chain: foundry,
+    });
+    await this.publicClient.waitForTransactionReceipt({ hash: txHash });
+
+    return { txHash };
   }
 }

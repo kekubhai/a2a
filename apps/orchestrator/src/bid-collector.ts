@@ -1,4 +1,6 @@
-import { openBidWindow, isBidWindowOpen, getBidWindowTTL } from '@a2a/redis';
+import { db, tasks, bids } from '@a2a/db';
+import { eq } from 'drizzle-orm';
+import { openBidWindow, isBidWindowOpen, getBidWindowTTL, collectBids, clearBids, BidRecord } from '@a2a/redis';
 import { selectWinner } from './winner-selector.js';
 import { triggerEscrowLock } from './escrow-trigger.js';
 
@@ -26,23 +28,31 @@ async function processBidWindow(taskId: string): Promise<void> {
     return;
   }
 
-  const { collectBids, closeBidWindow, clearBids } = await import('@a2a/redis');
-
   await closeBidWindow(taskId);
   console.log(`[BidCollector] Bid window closed for task ${taskId}`);
 
-  const bids = await collectBids(taskId);
-  console.log(`[BidCollector] Collected ${bids.length} bids for task ${taskId}`);
+  const redisBids = await collectBids(taskId);
+  console.log(`[BidCollector] Collected ${redisBids.length} bids for task ${taskId}`);
 
-  if (bids.length === 0) {
-    console.log(`[BidCollector] No bids for task ${taskId}, skipping`);
+  if (redisBids.length === 0) {
+    console.log(`[BidCollector] No bids for task ${taskId}, resetting to open`);
+    await db
+      .update(tasks)
+      .set({ status: 'open', updatedAt: new Date() })
+      .where(eq(tasks.id, taskId));
     await clearBids(taskId);
     return;
   }
 
-  const winner = await selectWinner(taskId, bids);
+  await persistBids(taskId, redisBids);
+
+  const winner = await selectWinner(taskId, redisBids);
   if (!winner) {
     console.log(`[BidCollector] No winner selected for task ${taskId}`);
+    await db
+      .update(tasks)
+      .set({ status: 'open', updatedAt: new Date() })
+      .where(eq(tasks.id, taskId));
     await clearBids(taskId);
     return;
   }
@@ -59,6 +69,32 @@ async function processBidWindow(taskId: string): Promise<void> {
   }
 
   await clearBids(taskId);
+}
+
+async function persistBids(taskId: string, redisBids: BidRecord[]): Promise<void> {
+  for (const rb of redisBids) {
+    const existing = await db
+      .select()
+      .from(bids)
+      .where(eq(bids.id, rb.bidId))
+      .limit(1);
+
+    if (existing.length === 0) {
+      await db.insert(bids).values({
+        id: rb.bidId,
+        taskId,
+        bidderAgentId: rb.agentId,
+        price: rb.price,
+        proposal: rb.proposal,
+        status: 'pending',
+      });
+    }
+  }
+}
+
+async function closeBidWindow(taskId: string): Promise<void> {
+  const { closeBidWindow: close } = await import('@a2a/redis');
+  await close(taskId);
 }
 
 export async function getBidWindowStatus(taskId: string) {

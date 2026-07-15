@@ -1,6 +1,6 @@
 import { db, tasks, agents } from '@a2a/db';
 import { eq, and, isNull } from 'drizzle-orm';
-import { acquireTaskLock } from '@a2a/redis';
+import { acquireTaskLock, releaseTaskLock } from '@a2a/redis';
 import { notifyEligibleAgents } from './agent-notifier.js';
 import { startBidCollection } from './bid-collector.js';
 
@@ -33,7 +33,11 @@ async function pollForNewTasks() {
 
   for (const task of newTasks) {
     if (task.deadline && new Date(task.deadline) < now) {
-      console.log(`[TaskListener] Task ${task.id} past deadline, skipping`);
+      console.log(`[TaskListener] Task ${task.id} past deadline, cancelling`);
+      await db
+        .update(tasks)
+        .set({ status: 'cancelled', updatedAt: new Date() })
+        .where(eq(tasks.id, task.id));
       continue;
     }
 
@@ -49,8 +53,14 @@ async function pollForNewTasks() {
 
       if (eligibleAgents.length === 0) {
         console.log(`[TaskListener] No eligible agents for task ${task.id}`);
+        await releaseTaskLock(task.id, TASK_HOLDER);
         continue;
       }
+
+      await db
+        .update(tasks)
+        .set({ status: 'bidding', updatedAt: new Date() })
+        .where(eq(tasks.id, task.id));
 
       await notifyEligibleAgents({
         id: task.id,
@@ -68,6 +78,8 @@ async function pollForNewTasks() {
       await startBidCollection(task.id, bidWindowSeconds);
     } catch (err) {
       console.error(`[TaskListener] Error processing task ${task.id}:`, err);
+    } finally {
+      await releaseTaskLock(task.id, TASK_HOLDER);
     }
   }
 }

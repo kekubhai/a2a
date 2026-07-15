@@ -40,33 +40,47 @@ export async function triggerEscrowLock(
     programIds,
   });
 
-  const submitResult = await client.submitBid({
-    taskId: taskData.onChainTaskId || taskId,
-    workerAgent: winner.agentId,
-    submissionHash: `bid-${winner.bidId}`,
-  });
+  try {
+    const submitResult = await client.submitBid({
+      taskId: taskData.onChainTaskId || taskId,
+      workerAgent: winner.agentId,
+      submissionHash: `bid-${winner.bidId}`,
+    });
 
-  console.log(`[EscrowTrigger] SubmitBid tx: ${submitResult.txHash}`);
+    console.log(`[EscrowTrigger] SubmitBid tx: ${submitResult.txHash}`);
 
-  await db
-    .update(tasks)
-    .set({
-      status: 'assigned',
-      assignedAgentId: winner.agentId,
-      updatedAt: new Date(),
-    })
-    .where(eq(tasks.id, taskId));
+    await db
+      .update(tasks)
+      .set({
+        status: 'assigned',
+        assignedAgentId: winner.agentId,
+        updatedAt: new Date(),
+      })
+      .where(eq(tasks.id, taskId));
 
-  await db
-    .update(bids)
-    .set({
-      status: 'accepted',
-      acceptedAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(eq(bids.id, winner.bidId));
+    await db
+      .update(bids)
+      .set({
+        status: 'accepted',
+        acceptedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(bids.id, winner.bidId));
 
-  console.log(`[EscrowTrigger] Task ${taskId} assigned to agent ${winner.agentId}`);
+    console.log(`[EscrowTrigger] Task ${taskId} assigned to agent ${winner.agentId}`);
+  } catch (err) {
+    await db
+      .update(bids)
+      .set({ status: 'rejected', rejectedAt: new Date(), updatedAt: new Date() })
+      .where(eq(bids.id, winner.bidId));
+
+    await db
+      .update(tasks)
+      .set({ status: 'open', updatedAt: new Date() })
+      .where(eq(tasks.id, taskId));
+
+    throw err;
+  }
 }
 
 function getRpcUrl(chainType: string): string {

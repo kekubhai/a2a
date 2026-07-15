@@ -18,16 +18,48 @@ async function seed() {
     })
     .returning();
 
-  const [workerAgent] = await db
+  const [coderAgent] = await db
     .insert(agents)
     .values({
-      name: 'Beta Worker',
-      description: 'Agent that completes smart contract audits',
-      ownerAddress: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
+      id: 'agent-coder-001',
+      name: 'CoderAgent',
+      description: 'Full-stack developer specializing in smart contracts and web apps',
+      ownerAddress: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       chainId: 'evm:1',
-      chainAddress: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
+      chainAddress: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       chainType: 'evm',
-      capabilities: ['smart_contract_audit', 'code_review'],
+      capabilities: ['coding', 'smart-contracts', 'frontend', 'backend', 'typescript', 'solidity'],
+      reputationScore: '85',
+    })
+    .returning();
+
+  await db
+    .insert(agents)
+    .values({
+      id: 'agent-researcher-001',
+      name: 'ResearcherAgent',
+      description: 'Data researcher specializing in analysis and report generation',
+      ownerAddress: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+      chainId: 'evm:1',
+      chainAddress: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+      chainType: 'evm',
+      capabilities: ['research', 'data-analysis', 'report-writing', 'web-scraping', 'summarization'],
+      reputationScore: '78',
+    })
+    .returning();
+
+  await db
+    .insert(agents)
+    .values({
+      id: 'agent-reviewer-001',
+      name: 'ReviewerAgent',
+      description: 'QA specialist focusing on code review and security auditing',
+      ownerAddress: '0xcccccccccccccccccccccccccccccccccccccccc',
+      chainId: 'evm:1',
+      chainAddress: '0xcccccccccccccccccccccccccccccccccccccccc',
+      chainType: 'evm',
+      capabilities: ['code-review', 'security-audit', 'testing', 'quality-assurance'],
+      reputationScore: '92',
     })
     .returning();
 
@@ -44,7 +76,7 @@ async function seed() {
     })
     .returning();
 
-  console.log(`  Created ${3} agents`);
+  console.log(`  Created ${4} agents`);
 
   // ─── Tasks ─────────────────────────────────────────────────
   const [task1] = await db
@@ -54,23 +86,41 @@ async function seed() {
       chainId: 'evm:1',
       title: 'Audit Uniswap V3 Pool Contract',
       description: 'Full security audit of custom Uniswap V3 pool wrapper',
-      bountyAmount: '5.0',
+      bountyAmount: '0.5',
       bountyToken: 'ETH',
       chainType: 'evm',
       acceptanceCriteriaHash: 'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco',
+      requirements: { requiredCapabilities: ['smart-contracts', 'security-audit'] },
+      status: 'open',
+    })
+    .returning();
+
+  const [task2] = await db
+    .insert(tasks)
+    .values({
+      buyerAgentId: buyerAgent.id,
+      chainId: 'evm:1',
+      title: 'Research MEV Bot Strategies',
+      description: 'Analyze current MEV bot landscape and write a report',
+      bountyAmount: '0.2',
+      bountyToken: 'ETH',
+      chainType: 'evm',
+      acceptanceCriteriaHash: 'QmResearchHash123456789',
+      requirements: { requiredCapabilities: ['research', 'data-analysis'] },
       status: 'open',
     })
     .returning();
 
   console.log(`  Created task: ${task1.title}`);
+  console.log(`  Created task: ${task2.title}`);
 
   // ─── Bids ──────────────────────────────────────────────────
   const [bid1] = await db
     .insert(bids)
     .values({
       taskId: task1.id,
-      bidderAgentId: workerAgent.id,
-      price: '4.5',
+      bidderAgentId: coderAgent.id,
+      price: '0.35',
       currency: 'ETH',
       estimatedDuration: '3d',
       proposal: 'I can deliver a comprehensive audit with full test coverage.',

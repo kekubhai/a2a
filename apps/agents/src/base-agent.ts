@@ -1,4 +1,4 @@
-import { getRedisClient, submitBidToWindow, BidRecord, TaskNotification } from '@a2a/redis';
+import { getRedisClient, submitBidToWindow, acknowledgeNotification, BidRecord, TaskNotification } from '@a2a/redis';
 
 const NOTIFY_PREFIX = 'a2a:notify:';
 
@@ -52,22 +52,26 @@ export abstract class BaseAgent {
     const notifications = await this.getNotifications();
 
     for (const notification of notifications) {
-      const canHandle = await this.evaluateTask(notification);
-      if (!canHandle) {
-        console.log(`[${this.name}] Skipping task ${notification.taskId} (not a fit)`);
-        continue;
-      }
+      try {
+        const canHandle = await this.evaluateTask(notification);
+        if (!canHandle) {
+          console.log(`[${this.name}] Skipping task ${notification.taskId} (not a fit)`);
+          continue;
+        }
 
-      const bid = await this.generateBid(notification);
-      if (!bid) {
-        console.log(`[${this.name}] Declined to bid on task ${notification.taskId}`);
-        continue;
-      }
+        const bid = await this.generateBid(notification);
+        if (!bid) {
+          console.log(`[${this.name}] Declined to bid on task ${notification.taskId}`);
+          continue;
+        }
 
-      await this.submitBid(notification.taskId, bid);
-      console.log(
-        `[${this.name}] Bid submitted for task ${notification.taskId}: price=${bid.price}`,
-      );
+        await this.submitBid(notification.taskId, bid);
+        console.log(
+          `[${this.name}] Bid submitted for task ${notification.taskId}: price=${bid.price}`,
+        );
+      } finally {
+        await acknowledgeNotification(this.agentId, notification.taskId);
+      }
     }
   }
 

@@ -14,4 +14,9 @@ export {
   collectBids,
   clearBids,
 } from './bid-window.js';
+export {
+  pushNotifications,
+  getNotifications,
+  acknowledgeNotification,
+} from './notify.js';
 export type { BidRecord, TaskNotification } from './bid-window.js';
