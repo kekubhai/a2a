@@ -9,6 +9,10 @@ import type {
   ReleaseEscrowParams,
   ReleaseEscrowResult,
   AgentReputation,
+  SubmitVerificationParams,
+  SubmitVerificationResult,
+  RaiseDisputeParams,
+  RaiseDisputeResult,
 } from './types.js';
 import { EvmA2AClient } from './evm.js';
 import { SolanaA2AClient } from './solana.js';
@@ -61,6 +65,16 @@ export class ChainAbstractedClient implements A2AClient {
   async getAgentReputation(agentAddress: string, chain: ChainType = 'evm'): Promise<AgentReputation> {
     return this.getClient(chain).getAgentReputation(agentAddress);
   }
+
+  async submitVerification(params: SubmitVerificationParams & { chain?: ChainType }): Promise<SubmitVerificationResult> {
+    const chain = params.chain || 'evm';
+    return this.getClient(chain).submitVerification(params);
+  }
+
+  async raiseDispute(params: RaiseDisputeParams & { chain?: ChainType }): Promise<RaiseDisputeResult> {
+    const chain = params.chain || 'evm';
+    return this.getClient(chain).raiseDispute(params);
+  }
 }
 
 export type {
@@ -73,4 +87,8 @@ export type {
   ReleaseEscrowParams,
   ReleaseEscrowResult,
   AgentReputation,
+  SubmitVerificationParams,
+  SubmitVerificationResult,
+  RaiseDisputeParams,
+  RaiseDisputeResult,
 } from './types.js';

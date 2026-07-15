@@ -10,6 +10,10 @@ import type {
   ReleaseEscrowParams,
   ReleaseEscrowResult,
   AgentReputation,
+  SubmitVerificationParams,
+  SubmitVerificationResult,
+  RaiseDisputeParams,
+  RaiseDisputeResult,
 } from './types.js';
 
 const TASK_REGISTRY_INSTRUCTION_LAYOUT = {
@@ -26,9 +30,16 @@ const AGENT_REGISTRY_INSTRUCTION_LAYOUT = {
   setReputation: 7,
 };
 
+const VERIFICATION_ORACLE_INSTRUCTION_LAYOUT = {
+  submitVerification: 0,
+  raiseDispute: 1,
+  resolveDispute: 2,
+};
+
 export interface SolanaClientAddresses {
   agentRegistry: string;
   taskRegistry: string;
+  verificationOracle: string;
 }
 
 export class SolanaA2AClient implements A2AClient {
@@ -49,6 +60,7 @@ export class SolanaA2AClient implements A2AClient {
     this.addresses = {
       agentRegistry: config.programIds?.agentRegistry || '',
       taskRegistry: config.programIds?.taskRegistry || '',
+      verificationOracle: config.programIds?.verificationOracle || '',
     };
   }
 
@@ -70,6 +82,13 @@ export class SolanaA2AClient implements A2AClient {
     return PublicKey.findProgramAddressSync(
       [Buffer.from('agent'), owner.toBuffer()],
       new PublicKey(this.addresses.agentRegistry),
+    );
+  }
+
+  private async findVerificationPda(taskId: PublicKey, verifier: PublicKey): Promise<[PublicKey, number]> {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from('verification'), taskId.toBuffer(), verifier.toBuffer()],
+      new PublicKey(this.addresses.verificationOracle),
     );
   }
 
@@ -156,6 +175,69 @@ export class SolanaA2AClient implements A2AClient {
       capBytes.forEach((b, i) => { buffer[offset + i] = b; });
       offset += capBytes.length;
     }
+
+    return new Uint8Array(buffer.subarray(0, offset));
+  }
+
+  private encodeSubmitVerification(
+    taskId: PublicKey,
+    result: number,
+    confidence: BN,
+    attestationHash: string,
+    signature: string,
+    signatureAlgorithm: string,
+  ): Uint8Array {
+    const buffer = Buffer.alloc(1000);
+    let offset = 0;
+
+    buffer.writeUInt32LE(VERIFICATION_ORACLE_INSTRUCTION_LAYOUT.submitVerification, offset);
+    offset += 4;
+
+    const taskBytes = taskId.toBuffer();
+    taskBytes.forEach((b, i) => { buffer[offset + i] = b; });
+    offset += 32;
+
+    buffer.writeUInt8(result, offset);
+    offset += 1;
+
+    const confBuf = Buffer.alloc(8);
+    confBuf.writeBigUInt64LE(BigInt(confidence.toString()));
+    confBuf.forEach((b, i) => { buffer[offset + i] = b; });
+    offset += 8;
+
+    const hashBytes = Buffer.from(attestationHash, 'utf8');
+    buffer.writeUInt32LE(hashBytes.length, offset);
+    offset += 4;
+    hashBytes.forEach((b, i) => { buffer[offset + i] = b; });
+    offset += hashBytes.length;
+
+    const sigBytes = Buffer.from(signature, 'utf8');
+    buffer.writeUInt32LE(sigBytes.length, offset);
+    offset += 4;
+    sigBytes.forEach((b, i) => { buffer[offset + i] = b; });
+    offset += sigBytes.length;
+
+    const algoBytes = Buffer.from(signatureAlgorithm, 'utf8');
+    buffer.writeUInt32LE(algoBytes.length, offset);
+    offset += 4;
+    algoBytes.forEach((b, i) => { buffer[offset + i] = b; });
+    offset += algoBytes.length;
+
+    return new Uint8Array(buffer.subarray(0, offset));
+  }
+
+  private encodeRaiseDispute(reason: string): Uint8Array {
+    const buffer = Buffer.alloc(1000);
+    let offset = 0;
+
+    buffer.writeUInt32LE(VERIFICATION_ORACLE_INSTRUCTION_LAYOUT.raiseDispute, offset);
+    offset += 4;
+
+    const reasonBytes = Buffer.from(reason, 'utf8');
+    buffer.writeUInt32LE(reasonBytes.length, offset);
+    offset += 4;
+    reasonBytes.forEach((b, i) => { buffer[offset + i] = b; });
+    offset += reasonBytes.length;
 
     return new Uint8Array(buffer.subarray(0, offset));
   }
@@ -272,5 +354,58 @@ export class SolanaA2AClient implements A2AClient {
       tasksCompleted,
       tasksFailed,
     };
+  }
+
+  async submitVerification(params: SubmitVerificationParams): Promise<SubmitVerificationResult> {
+    const taskId = new PublicKey(params.taskId);
+    const verifier = new PublicKey(params.verifierAgent);
+    const [verificationPda] = await this.findVerificationPda(taskId, verifier);
+
+    const data = this.encodeSubmitVerification(
+      taskId,
+      params.result,
+      new BN(params.confidence.toString()),
+      params.attestationHash,
+      params.signature,
+      params.signatureAlgorithm,
+    );
+
+    const instruction = new TransactionInstruction({
+      keys: [
+        { pubkey: verificationPda, isSigner: false, isWritable: true },
+        { pubkey: this.payer.publicKey, isSigner: true, isWritable: true },
+        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      ],
+      programId: new PublicKey(this.addresses.verificationOracle),
+      data: Buffer.from(data),
+    });
+
+    const transaction = new Transaction().add(instruction);
+    const txHash = await sendAndConfirmTransaction(this.connection, transaction, [this.payer]);
+
+    return {
+      verificationId: verificationPda.toString(),
+      txHash,
+    };
+  }
+
+  async raiseDispute(params: RaiseDisputeParams): Promise<RaiseDisputeResult> {
+    const verificationPda = new PublicKey(params.verificationId);
+
+    const data = this.encodeRaiseDispute(params.reason);
+
+    const instruction = new TransactionInstruction({
+      keys: [
+        { pubkey: verificationPda, isSigner: false, isWritable: true },
+        { pubkey: this.payer.publicKey, isSigner: true, isWritable: false },
+      ],
+      programId: new PublicKey(this.addresses.verificationOracle),
+      data: Buffer.from(data),
+    });
+
+    const transaction = new Transaction().add(instruction);
+    const txHash = await sendAndConfirmTransaction(this.connection, transaction, [this.payer]);
+
+    return { txHash };
   }
 }

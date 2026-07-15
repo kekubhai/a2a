@@ -19,4 +19,11 @@ export {
   getNotifications,
   acknowledgeNotification,
 } from './notify.js';
+export {
+  acquireVerifyLock,
+  releaseVerifyLock,
+  enqueueVerification,
+  dequeueVerification,
+  getVerifyQueueSize,
+} from './verify-lock.js';
 export type { BidRecord, TaskNotification } from './bid-window.js';

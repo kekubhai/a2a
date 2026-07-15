@@ -28,4 +28,8 @@ export {
   type ReleaseEscrowParams,
   type ReleaseEscrowResult,
   type AgentReputation,
+  type SubmitVerificationParams,
+  type SubmitVerificationResult,
+  type RaiseDisputeParams,
+  type RaiseDisputeResult,
 } from './client/index.js';
