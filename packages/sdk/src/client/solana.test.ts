@@ -51,6 +51,76 @@ describe('SolanaA2AClient', () => {
     });
   });
 
+  describe('submitBid', () => {
+    it('should assign a worker to a task on Solana localnet', async () => {
+      const client = new SolanaA2AClient({
+        chain: 'solana',
+        rpcUrl: SOLANA_RPC,
+        privateKey: JSON.stringify(Array.from(payer.secretKey)),
+        programIds: {
+          agentRegistry: agentRegistryProgramId.toString(),
+          taskRegistry: taskRegistryProgramId.toString(),
+          verificationOracle: '',
+        },
+      });
+
+      const buyer = Keypair.generate();
+      const worker = Keypair.generate();
+
+      const postResult = await client.postTask({
+        buyerAgent: buyer.publicKey.toString(),
+        acceptanceCriteriaHash: 'QmSolanaBidCriteria',
+        deadline: Math.floor(Date.now() / 1000) + 86400,
+        bountyLamports: BigInt(LAMPORTS_PER_SOL),
+      });
+
+      const bidResult = await client.submitBid({
+        taskId: postResult.taskId,
+        workerAgent: worker.publicKey.toString(),
+        submissionHash: 'QmSolanaBidProposal',
+      });
+
+      expect(bidResult.txHash).toBeDefined();
+    });
+  });
+
+  describe('releaseEscrow', () => {
+    it('should release escrow to worker on task completion', async () => {
+      const client = new SolanaA2AClient({
+        chain: 'solana',
+        rpcUrl: SOLANA_RPC,
+        privateKey: JSON.stringify(Array.from(payer.secretKey)),
+        programIds: {
+          agentRegistry: agentRegistryProgramId.toString(),
+          taskRegistry: taskRegistryProgramId.toString(),
+          verificationOracle: '',
+        },
+      });
+
+      const buyer = Keypair.generate();
+      const worker = Keypair.generate();
+
+      const postResult = await client.postTask({
+        buyerAgent: buyer.publicKey.toString(),
+        acceptanceCriteriaHash: 'QmSolanaEscrowCriteria',
+        deadline: Math.floor(Date.now() / 1000) + 86400,
+        bountyLamports: BigInt(LAMPORTS_PER_SOL),
+      });
+
+      await client.submitBid({
+        taskId: postResult.taskId,
+        workerAgent: worker.publicKey.toString(),
+        submissionHash: 'QmSolanaBidForEscrow',
+      });
+
+      const releaseResult = await client.releaseEscrow({
+        taskId: postResult.taskId,
+      });
+
+      expect(releaseResult.txHash).toBeDefined();
+    });
+  });
+
   describe('getAgentReputation', () => {
     it('should return default reputation for unregistered agent', async () => {
       const client = new SolanaA2AClient({

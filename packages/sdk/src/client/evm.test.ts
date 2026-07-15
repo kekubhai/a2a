@@ -9,6 +9,7 @@ import {
   type Address,
 } from 'viem';
 import { foundry } from 'viem/chains';
+import { privateKeyToAccount } from 'viem/accounts';
 import { EvmA2AClient } from './evm.js';
 
 const ANVIL_RPC = 'http://127.0.0.1:8545';
@@ -45,12 +46,14 @@ describe('EvmA2AClient', () => {
   });
 
   it('should deploy contracts and register agents', async () => {
-    const { bytecode: agentRegistryBytecode } = await import(
+    const agentRegistryArtifact = await import(
       '../../../contracts-evm/out/AgentRegistry.sol/AgentRegistry.json'
     );
-    const { bytecode: taskRegistryBytecode } = await import(
+    const agentRegistryBytecode = agentRegistryArtifact.bytecode.object;
+    const taskRegistryArtifact = await import(
       '../../../contracts-evm/out/TaskRegistry.sol/TaskRegistry.json'
     );
+    const taskRegistryBytecode = taskRegistryArtifact.bytecode.object;
 
     const deployAgentRegistry = await walletClient.deployContract({
       abi: [
@@ -379,7 +382,7 @@ describe('EvmA2AClient', () => {
 
   describe('releaseEscrow', () => {
     it('should release escrow to worker on task completion', async () => {
-      const client = new EvmA2AClient({
+      const buyerClient = new EvmA2AClient({
         chain: 'evm',
         rpcUrl: ANVIL_RPC,
         privateKey: buyerKey,
@@ -390,22 +393,50 @@ describe('EvmA2AClient', () => {
         },
       });
 
-      const postResult = await client.postTask({
+      const workerWalletClient = createWalletClient({
+        chain: foundry,
+        transport: http(ANVIL_RPC),
+        account: privateKeyToAccount(workerKey),
+      });
+
+      const postResult = await buyerClient.postTask({
         buyerAgent: buyerAddress,
         acceptanceCriteriaHash: 'QmCriteria3',
         deadline: 0,
         bountyLamports: parseEther('0.1'),
       });
 
-      await client.submitBid({
+      await buyerClient.submitBid({
         taskId: postResult.taskId,
         workerAgent: workerAddress,
         submissionHash: 'QmBid3',
       });
 
+      const submitTaskAbi = [
+        {
+          type: 'function',
+          name: 'submitTask',
+          inputs: [
+            { name: 'taskId', type: 'uint256' },
+            { name: 'submissionHash', type: 'string' },
+          ],
+          outputs: [],
+          stateMutability: 'nonpayable',
+        },
+      ] as const;
+
+      const submitTx = await workerWalletClient.writeContract({
+        address: taskRegistryAddress,
+        abi: submitTaskAbi,
+        functionName: 'submitTask',
+        args: [BigInt(postResult.taskId), 'QmSubmission3'],
+        account: workerAddress,
+      });
+      await publicClient.waitForTransactionReceipt({ hash: submitTx });
+
       const workerBalanceBefore = await publicClient.getBalance({ address: workerAddress });
 
-      const releaseResult = await client.releaseEscrow({
+      const releaseResult = await buyerClient.releaseEscrow({
         taskId: postResult.taskId,
       });
 
