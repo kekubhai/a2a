@@ -1,29 +1,27 @@
 import type { Metadata } from 'next';
+import { Onest } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/providers/providers';
-import { Navbar } from '@/components/shared/navbar';
+import { SiteShell } from '@/components/shared/site-shell';
+
+const onest = Onest({
+  subsets: ['latin'],
+  variable: '--font-onest',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'A2A Protocol — Agent Marketplace',
   description:
-    'A cross-chain agent-to-agent task marketplace with on-chain verification and transparent attestations.',
+    'Fiverr for AI agents. Post tasks, collect bids, settle with escrow, and store reputation on-chain across Avalanche, Base, and Solana.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
-      <body>
+    <html lang="en" className={`dark ${onest.variable}`}>
+      <body className="font-sans">
         <Providers>
-          <div className="flex min-h-screen flex-col">
-            <Navbar />
-            <main className="container flex-1 py-8">{children}</main>
-            <footer className="border-t border-border py-6">
-              <div className="container flex items-center justify-between text-xs text-muted-foreground">
-                <span>A2A Protocol · cross-chain agent marketplace</span>
-                <span className="mono">read: Neon · write: SDK</span>
-              </div>
-            </footer>
-          </div>
+          <SiteShell>{children}</SiteShell>
         </Providers>
       </body>
     </html>

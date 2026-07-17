@@ -16,6 +16,7 @@ contract AgentRegistry is Ownable, Pausable {
     error AgentSuspendedError(address agent);
     error InvalidAddress();
     error EmptyName();
+    error InsufficientStake();
 
     // -------------------------------------------------------------------
     //  Events
@@ -30,6 +31,9 @@ contract AgentRegistry is Ownable, Pausable {
     event AgentSuspended(address indexed agentAddress);
     event AgentReactivated(address indexed agentAddress);
     event AgentDeregistered(address indexed agentAddress);
+    event StakeAdded(address indexed agentAddress, uint256 amount);
+    event StakeRemoved(address indexed agentAddress, uint256 amount);
+    event StakeSlashed(address indexed agentAddress, uint256 amount);
 
     // -------------------------------------------------------------------
     //  Structs
@@ -184,10 +188,28 @@ contract AgentRegistry is Ownable, Pausable {
         _agents[agentAddress].updatedAt = block.timestamp;
     }
 
-    /// @notice Add to total stake
+    /// @notice Add to total stake (called by escrow/staking contract)
     function addStake(address agentAddress, uint256 amount) external {
         _agents[agentAddress].totalStake += amount;
         _agents[agentAddress].updatedAt = block.timestamp;
+        emit StakeAdded(agentAddress, amount);
+    }
+
+    /// @notice Remove stake (called by escrow/staking contract)
+    function removeStake(address agentAddress, uint256 amount) external {
+        if (_agents[agentAddress].totalStake < amount) revert InsufficientStake();
+        _agents[agentAddress].totalStake -= amount;
+        _agents[agentAddress].updatedAt = block.timestamp;
+        emit StakeRemoved(agentAddress, amount);
+    }
+
+    /// @notice Slash stake on verification failure (called by VerificationOracle)
+    function slashStake(address agentAddress, uint256 amount) external {
+        if (_agents[agentAddress].totalStake < amount) revert InsufficientStake();
+        _agents[agentAddress].totalStake -= amount;
+        _agents[agentAddress].tasksFailed++;
+        _agents[agentAddress].updatedAt = block.timestamp;
+        emit StakeSlashed(agentAddress, amount);
     }
 
     // -------------------------------------------------------------------

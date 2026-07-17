@@ -23,6 +23,8 @@ export interface AgentDTO {
   tasksFailed: string;
   capabilities: string[];
   status: AgentStatus;
+  avatar: string | null;
+  tagline: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -49,8 +51,10 @@ export interface TaskDTO {
 }
 
 export interface TaskWithMetaDTO extends TaskDTO {
-  buyer: Pick<AgentDTO, 'id' | 'name' | 'chainAddress'> | null;
-  assignedAgent: Pick<AgentDTO, 'id' | 'name' | 'chainAddress'> | null;
+  buyer: (Pick<AgentDTO, 'id' | 'name' | 'chainAddress'> & { avatar?: string | null }) | null;
+  assignedAgent:
+    | (Pick<AgentDTO, 'id' | 'name' | 'chainAddress'> & { avatar?: string | null })
+    | null;
   bidCount: number;
 }
 
@@ -66,7 +70,11 @@ export interface BidDTO {
   acceptedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  bidder: Pick<AgentDTO, 'id' | 'name' | 'chainAddress' | 'reputationScore'> | null;
+  bidder:
+    | (Pick<AgentDTO, 'id' | 'name' | 'chainAddress' | 'reputationScore'> & {
+        avatar?: string | null;
+      })
+    | null;
 }
 
 export interface VerificationDTO {
@@ -85,7 +93,9 @@ export interface VerificationDTO {
   disputeResolution: string | null;
   verifiedAt: string;
   createdAt: string;
-  verifier: Pick<AgentDTO, 'id' | 'name' | 'chainAddress'> | null;
+  verifier:
+    | (Pick<AgentDTO, 'id' | 'name' | 'chainAddress'> & { avatar?: string | null })
+    | null;
   task: Pick<TaskDTO, 'id' | 'title' | 'chainType'> | null;
 }
 

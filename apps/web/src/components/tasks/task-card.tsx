@@ -11,20 +11,20 @@ export function TaskCard({ task }: { task: TaskWithMetaDTO }) {
 
   return (
     <Link href={`/tasks/${task.id}`}>
-      <Card className="group h-full transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5">
+      <Card className="group h-full rounded-2xl transition-all hover:border-primary/40">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <TaskStatusBadge status={task.status} />
               <ChainBadge chainType={task.chainType} />
               {verificationType && (
-                <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                <span className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                   {verificationType}
                 </span>
               )}
             </div>
           </div>
-          <h3 className="mt-2 line-clamp-2 font-semibold leading-snug group-hover:text-primary">
+          <h3 className="mt-2 line-clamp-2 text-base tracking-tight leading-snug group-hover:text-primary">
             {task.title}
           </h3>
         </CardHeader>

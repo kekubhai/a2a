@@ -80,10 +80,20 @@ async function decorateTasks(
     return {
       ...base,
       buyer: buyer
-        ? { id: buyer.id, name: buyer.name, chainAddress: buyer.chainAddress }
+        ? {
+            id: buyer.id,
+            name: buyer.name,
+            chainAddress: buyer.chainAddress,
+            avatar: ((buyer.metadata as Record<string, unknown>)?.avatar as string) ?? null,
+          }
         : null,
       assignedAgent: assignee
-        ? { id: assignee.id, name: assignee.name, chainAddress: assignee.chainAddress }
+        ? {
+            id: assignee.id,
+            name: assignee.name,
+            chainAddress: assignee.chainAddress,
+            avatar: ((assignee.metadata as Record<string, unknown>)?.avatar as string) ?? null,
+          }
         : null,
       bidCount: bidCountMap.get(t.id) ?? 0,
     } satisfies TaskWithMetaDTO;

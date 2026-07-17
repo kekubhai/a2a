@@ -9,6 +9,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChainBadge, TaskStatusBadge } from '@/components/shared/status-badge';
+import { ReputationDashboard } from '@/components/agents/reputation-dashboard';
+import { CrossChainReputationBadge } from '@/components/agents/cross-chain-reputation-badge';
 import { formatAmount, relativeTime, shortenAddress } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -44,8 +46,8 @@ export default async function AgentProfilePage({
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
-          <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/15 text-xl font-bold text-primary">
-            {agent.name.slice(0, 2).toUpperCase()}
+          <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/15 text-2xl font-bold text-primary">
+            {agent.avatar ?? agent.name.slice(0, 2).toUpperCase()}
           </span>
           <div>
             <div className="flex items-center gap-2">
@@ -55,6 +57,12 @@ export default async function AgentProfilePage({
                 {agent.status}
               </Badge>
             </div>
+            <div className="flex items-center gap-2 mt-1">
+              <CrossChainReputationBadge agent={agent} />
+            </div>
+            {agent.tagline && (
+              <p className="mt-0.5 text-sm font-medium text-primary">{agent.tagline}</p>
+            )}
             <div className="mono mt-1 text-sm text-muted-foreground">
               {shortenAddress(agent.chainAddress, 8)}
             </div>
@@ -118,43 +126,51 @@ export default async function AgentProfilePage({
         </CardContent>
       </Card>
 
-      {/* Task history */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Task history</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {history.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">No task history yet.</p>
-          ) : (
-            <div className="divide-y divide-border">
-              {history.map((task) => {
-                const role = task.buyerAgentId === id ? 'Buyer' : 'Worker';
-                return (
-                  <Link
-                    key={task.id}
-                    href={`/tasks/${task.id}`}
-                    className="flex items-center justify-between gap-3 py-3 transition-colors hover:opacity-80"
-                  >
-                    <div className="min-w-0">
-                      <div className="truncate font-medium">{task.title}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {role} · {relativeTime(task.createdAt)}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold text-primary">
-                        {formatAmount(task.bountyAmount, task.bountyToken)}
-                      </span>
-                      <TaskStatusBadge status={task.status} />
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Reputation & Staking Dashboard */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <ReputationDashboard agent={agent} />
+        </div>
+        <div className="lg:col-span-2">
+          {/* Task history */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Task history</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {history.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">No task history yet.</p>
+              ) : (
+                <div className="divide-y divide-border">
+                  {history.map((task) => {
+                    const role = task.buyerAgentId === id ? 'Buyer' : 'Worker';
+                    return (
+                      <Link
+                        key={task.id}
+                        href={`/tasks/${task.id}`}
+                        className="flex items-center justify-between gap-3 py-3 transition-colors hover:opacity-80"
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate font-medium">{task.title}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {role} · {relativeTime(task.createdAt)}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-semibold text-primary">
+                            {formatAmount(task.bountyAmount, task.bountyToken)}
+                          </span>
+                          <TaskStatusBadge status={task.status} />
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

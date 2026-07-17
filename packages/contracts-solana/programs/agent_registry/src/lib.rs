@@ -83,6 +83,39 @@ pub mod agent_registry {
         agent.reputation_score = score;
         Ok(())
     }
+
+    /// Add stake to agent
+    pub fn add_stake(
+        ctx: Context<StakeOperations>,
+        amount: u64,
+    ) -> Result<()> {
+        let agent = &mut ctx.accounts.agent;
+        agent.total_stake += amount;
+        Ok(())
+    }
+
+    /// Remove stake from agent
+    pub fn remove_stake(
+        ctx: Context<StakeOperations>,
+        amount: u64,
+    ) -> Result<()> {
+        let agent = &mut ctx.accounts.agent;
+        require!(agent.total_stake >= amount, AgentError::InsufficientStake);
+        agent.total_stake -= amount;
+        Ok(())
+    }
+
+    /// Slash stake on verification failure
+    pub fn slash_stake(
+        ctx: Context<StakeOperations>,
+        amount: u64,
+    ) -> Result<()> {
+        let agent = &mut ctx.accounts.agent;
+        require!(agent.total_stake >= amount, AgentError::InsufficientStake);
+        agent.total_stake -= amount;
+        agent.tasks_failed += 1;
+        Ok(())
+    }
 }
 
 // -------------------------------------------------------------------
@@ -152,6 +185,12 @@ pub struct RecordStats<'info> {
     pub agent: Account<'info, Agent>,
 }
 
+#[derive(Accounts)]
+pub struct StakeOperations<'info> {
+    #[account(mut)]
+    pub agent: Account<'info, Agent>,
+}
+
 // -------------------------------------------------------------------
 //  State
 // -------------------------------------------------------------------
@@ -187,4 +226,6 @@ pub enum AgentError {
     MetadataUriTooLong,
     #[msg("Invalid reputation score (max 10000)")]
     InvalidReputation,
+    #[msg("Insufficient stake balance")]
+    InsufficientStake,
 }

@@ -4,45 +4,51 @@
 
 @layer base {
   :root {
-    --background: 222 47% 5%;
-    --foreground: 210 40% 98%;
+    /* Framer Verity-derived tokens */
+    --background: 240 7% 5.5%; /* #0D0D0F */
+    --foreground: 0 0% 100%;
 
-    --card: 222 44% 8%;
-    --card-foreground: 210 40% 98%;
+    --card: 240 6% 7%; /* #111113 Surface 1 */
+    --card-foreground: 0 0% 100%;
 
-    --popover: 222 44% 7%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 240 5% 8%; /* #141416 Surface 2 */
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 160 84% 45%;
-    --primary-foreground: 222 47% 6%;
+    --primary: 187 85% 53%; /* #21D2ED Accent */
+    --primary-foreground: 240 7% 5.5%;
 
-    --secondary: 217 33% 15%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 240 5% 10%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 217 33% 14%;
-    --muted-foreground: 215 20% 60%;
+    --muted: 240 5% 12%;
+    --muted-foreground: 0 0% 69%; /* #B0B0B0 */
 
-    --accent: 199 89% 48%;
-    --accent-foreground: 222 47% 6%;
+    --accent: 187 85% 53%;
+    --accent-foreground: 240 7% 5.5%;
 
     --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
     --success: 142 71% 45%;
-    --success-foreground: 222 47% 6%;
+    --success-foreground: 240 7% 5.5%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 222 47% 6%;
+    --warning-foreground: 240 7% 5.5%;
 
-    --border: 217 33% 18%;
-    --input: 217 33% 18%;
-    --ring: 160 84% 45%;
+    --border: 0 0% 100% / 0.06;
+    --input: 0 0% 100% / 0.08;
+    --ring: 187 85% 53%;
 
-    --radius: 0.65rem;
+    --radius: 0.75rem;
+    --heading: 45 17% 95%; /* #F5F4F0 */
   }
 
   * {
     @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
   }
 
   body {
@@ -51,43 +57,142 @@
       'rlig' 1,
       'calt' 1;
   }
-
-  /* Ambient grid backdrop for the "protocol" aesthetic. */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background-image:
-      radial-gradient(circle at 20% 0%, hsl(160 84% 45% / 0.08), transparent 40%),
-      radial-gradient(circle at 80% 10%, hsl(199 89% 48% / 0.07), transparent 45%),
-      linear-gradient(to right, hsl(217 33% 18% / 0.25) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(217 33% 18% / 0.25) 1px, transparent 1px);
-    background-size:
-      100% 100%,
-      100% 100%,
-      44px 44px,
-      44px 44px;
-    pointer-events: none;
-  }
 }
 
 @layer utilities {
   .mono {
     font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
   }
+
   .glass {
-    background: hsl(var(--card) / 0.7);
-    backdrop-filter: blur(10px);
+    background: hsl(var(--card) / 0.75);
+    backdrop-filter: blur(12px);
+  }
+
+  .noise {
+    position: relative;
+  }
+
+  .noise::after {
+    content: '';
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    opacity: 0.035;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .heading-display {
+    font-size: clamp(2.5rem, 6vw, 3.75rem);
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+    font-weight: 400;
+  }
+
+  .heading-section {
+    font-size: clamp(2rem, 4vw, 3rem);
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+    font-weight: 400;
+  }
+
+  .animate-in-up {
+    animation: in-up 0.7s ease-out both;
   }
 }
 
-/* Solana wallet-adapter button theming to match the dark UI. */
+/* Framer section frame (from MCP node styles) */
+.framer-section {
+  box-sizing: border-box;
+  width: 100%;
+  height: min-content;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 140px 24px 80px 24px;
+  min-height: calc(var(--framer-viewport-height, 100vh) * 1);
+  overflow: hidden;
+  align-content: center;
+  flex-wrap: nowrap;
+  gap: 0;
+  position: relative;
+  border-radius: 0;
+}
+
+/* Framer Verity-style gradient cards */
+.framer-gradient-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background:
+    linear-gradient(
+      165deg,
+      rgba(33, 210, 237, 0.14) 0%,
+      rgba(17, 17, 19, 0.92) 38%,
+      rgb(13, 13, 15) 100%
+    );
+  transition:
+    border-color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.framer-gradient-card::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(33, 210, 237, 0.18), transparent 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 40%);
+}
+
+.framer-gradient-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.framer-gradient-card:hover {
+  border-color: rgba(33, 210, 237, 0.35);
+  transform: translateY(-2px);
+}
+
+.framer-gradient-card--soft {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(33, 210, 237, 0.08) 0%,
+      rgb(17, 17, 19) 48%,
+      rgb(13, 13, 15) 100%
+    );
+}
+
+@keyframes in-up {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Solana wallet-adapter button theming */
 .wallet-adapter-button-trigger {
   background: hsl(var(--primary)) !important;
   color: hsl(var(--primary-foreground)) !important;
-  border-radius: var(--radius) !important;
-  height: 2.5rem !important;
-  font-size: 0.875rem !important;
-  font-weight: 600 !important;
+  border-radius: 9999px !important;
+  height: 2.75rem !important;
+  font-size: 0.9375rem !important;
+  font-weight: 500 !important;
+  font-family: inherit !important;
 }

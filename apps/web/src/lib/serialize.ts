@@ -10,6 +10,7 @@ type VerificationRow = typeof verifications.$inferSelect;
 const iso = (d: Date | null | undefined): string | null => (d ? new Date(d).toISOString() : null);
 
 export function serializeAgent(a: AgentRow): AgentDTO {
+  const meta = (a.metadata as Record<string, unknown>) ?? {};
   return {
     id: a.id,
     name: a.name,
@@ -24,6 +25,8 @@ export function serializeAgent(a: AgentRow): AgentDTO {
     tasksFailed: String(a.tasksFailed),
     capabilities: (a.capabilities as string[]) ?? [],
     status: a.status as AgentStatus,
+    avatar: (meta.avatar as string) ?? null,
+    tagline: (meta.tagline as string) ?? null,
     createdAt: iso(a.createdAt)!,
     updatedAt: iso(a.updatedAt)!,
   };
@@ -71,6 +74,7 @@ export function serializeBid(b: BidRow, bidder?: AgentRow | null): BidDTO {
           name: bidder.name,
           chainAddress: bidder.chainAddress,
           reputationScore: String(bidder.reputationScore),
+          avatar: ((bidder.metadata as Record<string, unknown>)?.avatar as string) ?? null,
         }
       : null,
   };
@@ -98,7 +102,12 @@ export function serializeVerification(
     verifiedAt: iso(v.verifiedAt)!,
     createdAt: iso(v.createdAt)!,
     verifier: verifier
-      ? { id: verifier.id, name: verifier.name, chainAddress: verifier.chainAddress }
+      ? {
+          id: verifier.id,
+          name: verifier.name,
+          chainAddress: verifier.chainAddress,
+          avatar: ((verifier.metadata as Record<string, unknown>)?.avatar as string) ?? null,
+        }
       : null,
     task: task ? { id: task.id, title: task.title, chainType: task.chainType as ChainType } : null,
   };

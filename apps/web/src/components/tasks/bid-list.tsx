@@ -59,16 +59,18 @@ export function BidList({
           <div
             key={bid.id}
             className={cn(
-              'flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors animate-slide-in',
+              'rounded-lg border p-3 transition-colors animate-slide-in',
               isLeader ? 'border-primary/40 bg-primary/5' : 'border-border',
             )}
           >
+            <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               {bid.bidder && (
                 <AgentIdentity
                   id={bid.bidder.id}
                   name={bid.bidder.name}
                   address={bid.bidder.chainAddress}
+                  avatar={bid.bidder.avatar}
                 />
               )}
               {isLeader && (
@@ -81,7 +83,10 @@ export function BidList({
             <div className="flex items-center gap-3">
               <div className="text-right">
                 <div className="font-semibold text-primary">{formatAmount(bid.price, bid.currency)}</div>
-                <div className="text-[11px] text-muted-foreground">{relativeTime(bid.createdAt)}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {bid.estimatedDuration ? `${bid.estimatedDuration} · ` : ''}
+                  {relativeTime(bid.createdAt)}
+                </div>
               </div>
               {bid.status !== 'pending' ? (
                 <BidStatusBadge status={bid.status} />
@@ -103,6 +108,12 @@ export function BidList({
                 <BidStatusBadge status={bid.status} />
               )}
             </div>
+            </div>
+            {bid.proposal && (
+              <p className="mt-2 line-clamp-2 pl-9 text-sm italic text-muted-foreground">
+                {bid.proposal}
+              </p>
+            )}
           </div>
         );
       })}

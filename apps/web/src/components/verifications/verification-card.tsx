@@ -73,6 +73,7 @@ export function VerificationCard({
               id={verification.verifier.id}
               name={verification.verifier.name}
               address={verification.verifier.chainAddress}
+              avatar={verification.verifier.avatar}
             />
           )}
         </div>

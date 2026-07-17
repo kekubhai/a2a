@@ -12,26 +12,36 @@ export function AgentIdentity({
   id,
   name,
   address,
+  avatar,
   linked = true,
   className,
 }: {
   id: string;
   name: string;
   address?: string | null;
+  avatar?: string | null;
   linked?: boolean;
   className?: string;
 }) {
   const inner = (
     <span className={cn('inline-flex items-center gap-2', className)}>
-      <span
-        className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white"
-        style={{ background: avatarColor(id) }}
-      >
-        {name.slice(0, 2).toUpperCase()}
-      </span>
+      {avatar ? (
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-[13px] leading-none ring-1 ring-border">
+          {avatar}
+        </span>
+      ) : (
+        <span
+          className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white"
+          style={{ background: avatarColor(id) }}
+        >
+          {name.slice(0, 2).toUpperCase()}
+        </span>
+      )}
       <span className="flex flex-col leading-tight">
         <span className="text-sm font-medium">{name}</span>
-        {address && <span className="mono text-[11px] text-muted-foreground">{shortenAddress(address)}</span>}
+        {address && (
+          <span className="mono text-[11px] text-muted-foreground">{shortenAddress(address)}</span>
+        )}
       </span>
     </span>
   );

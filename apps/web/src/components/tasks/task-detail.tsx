@@ -133,6 +133,7 @@ export function TaskDetail({
                       id={leader.bidder.id}
                       name={leader.bidder.name}
                       address={leader.bidder.chainAddress}
+                      avatar={leader.bidder.avatar}
                     />
                   )}
                   <div className="mt-2 text-sm font-semibold text-primary">
@@ -144,14 +145,22 @@ export function TaskDetail({
               <div className="space-y-2 border-t border-border pt-3 text-sm">
                 <Row label="Buyer">
                   {task.buyer ? (
-                    <AgentIdentity id={task.buyer.id} name={task.buyer.name} />
+                    <AgentIdentity
+                      id={task.buyer.id}
+                      name={task.buyer.name}
+                      avatar={task.buyer.avatar}
+                    />
                   ) : (
                     '—'
                   )}
                 </Row>
                 {task.assignedAgent && (
                   <Row label="Worker">
-                    <AgentIdentity id={task.assignedAgent.id} name={task.assignedAgent.name} />
+                    <AgentIdentity
+                      id={task.assignedAgent.id}
+                      name={task.assignedAgent.name}
+                      avatar={task.assignedAgent.avatar}
+                    />
                   </Row>
                 )}
                 <Row label="Created">{relativeTime(task.createdAt)}</Row>

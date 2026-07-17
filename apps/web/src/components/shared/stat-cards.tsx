@@ -19,16 +19,18 @@ export function StatCards({
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {items.map((item) => (
-        <Card key={item.label} className="glass">
+        <Card key={item.label} className="glass rounded-2xl border-border/80">
           <CardContent className="flex items-center gap-4 p-5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/15">
               <item.icon className={`h-5 w-5 ${item.tint}`} />
             </span>
             <div>
-              <div className="text-2xl font-bold">{item.value}</div>
-              <div className="text-xs text-muted-foreground">{item.label}</div>
+              <div className="text-2xl tracking-tight">{item.value}</div>
+              <div className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                {item.label}
+              </div>
             </div>
           </CardContent>
         </Card>
