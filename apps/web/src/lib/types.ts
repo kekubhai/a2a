@@ -104,3 +104,22 @@ export interface BidWindowStatus {
   open: boolean;
   ttl: number; // seconds remaining
 }
+
+export interface ModelDTO {
+  id: string;
+  provider: string;
+  name: string;
+  modelType: 'llm' | 'image';
+  inputPrice: string;
+  outputPrice: string;
+  codingBenchmark: string | null;
+  writingBenchmark: string | null;
+  generalBenchmark: string | null;
+  imageElo: string | null;
+  imageTextRanking: string | null;
+  imagePhotorealism: string | null;
+  imageLatency: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

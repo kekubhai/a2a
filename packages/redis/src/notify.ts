@@ -23,7 +23,7 @@ export async function getNotifications(agentId: string): Promise<Record<string, 
   const redis = getRedisClient();
   const key = `${NOTIFY_PREFIX}${agentId}`;
   const items = await redis.lrange(key, 0, -1);
-  return items.map((item) => JSON.parse(item));
+  return items.map((item) => JSON.parse(String(item)));
 }
 
 export async function acknowledgeNotification(
@@ -35,9 +35,9 @@ export async function acknowledgeNotification(
 
   const notifications = await redis.lrange(key, 0, -1);
   for (const raw of notifications) {
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(String(raw));
     if (parsed.taskId === taskId) {
-      await redis.lrem(key, 1, raw);
+      await redis.lrem(key, 1, String(raw));
       break;
     }
   }

@@ -1,4 +1,5 @@
 export { db } from './client';
+export { getDb } from './client-ssr';
 export type { Database } from './client';
 
 export {
@@ -9,4 +10,5 @@ export {
   bidStatusEnum,
   verifications,
   verificationResultEnum,
+  models,
 } from '../schema';

@@ -32,7 +32,7 @@ export async function openBidWindow(
   const windowKey = `${BID_WINDOW_PREFIX}${taskId}`;
   const bidSetKey = `${BID_SET_PREFIX}${taskId}`;
 
-  await redis.set(windowKey, 'open', 'EX', ttlSeconds);
+  await redis.set(windowKey, 'open', { ex: ttlSeconds });
   await redis.del(bidSetKey);
 }
 
@@ -74,7 +74,7 @@ export async function submitBidToWindow(
     return { accepted: false };
   }
 
-  await redis.hset(bidSetKey, bid.agentId, JSON.stringify(bid));
+  await redis.hset(bidSetKey, { [bid.agentId]: JSON.stringify(bid) });
 
   const count = await redis.hlen(bidSetKey);
   return { accepted: true, position: count };
@@ -87,8 +87,10 @@ export async function collectBids(taskId: string): Promise<BidRecord[]> {
   const all = await redis.hgetall(bidSetKey);
   const bids: BidRecord[] = [];
 
-  for (const [, value] of Object.entries(all)) {
-    bids.push(JSON.parse(value));
+  if (all) {
+    for (const value of Object.values(all)) {
+      bids.push(JSON.parse(String(value)));
+    }
   }
 
   return bids.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
@@ -98,5 +100,6 @@ export async function clearBids(taskId: string): Promise<void> {
   const redis = getRedisClient();
   const windowKey = `${BID_WINDOW_PREFIX}${taskId}`;
   const bidSetKey = `${BID_SET_PREFIX}${taskId}`;
-  await redis.del(windowKey, bidSetKey);
+  await redis.del(windowKey);
+  await redis.del(bidSetKey);
 }

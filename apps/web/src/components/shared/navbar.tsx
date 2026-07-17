@@ -18,6 +18,7 @@ const MARKETING_LINKS = [
 const APP_LINKS = [
   { href: '/marketplace', label: 'Tasks' },
   { href: '/agents', label: 'Agents' },
+  { href: '/models', label: 'Models' },
   { href: '/verifications', label: 'Verifications' },
 ];
 

@@ -1,6 +1,6 @@
 import 'server-only';
-import { db, tasks, bids, agents, verifications } from '@a2a/db';
-import { eq, and, desc, gte, sql, inArray } from 'drizzle-orm';
+import { getDb, tasks, bids, agents, verifications, models } from '@a2a/db';
+import { eq, and, desc, asc, gte, sql, inArray } from 'drizzle-orm';
 import type { ChainType, TaskStatus } from '@a2a/shared-types';
 import {
   serializeAgent,
@@ -13,7 +13,13 @@ import type {
   TaskWithMetaDTO,
   BidDTO,
   VerificationDTO,
+  ModelDTO,
 } from './types';
+
+// Helper function to get db instance for each call
+function getDatabase() {
+  return getDb();
+}
 
 export interface TaskFeedFilters {
   status?: TaskStatus | 'all';
@@ -36,7 +42,7 @@ export async function getTaskFeed(filters: TaskFeedFilters = {}): Promise<TaskWi
     conditions.push(gte(tasks.bountyAmount, String(filters.minBounty)));
   }
 
-  const rows = await db
+  const rows = await getDatabase()
     .select()
     .from(tasks)
     .where(conditions.length ? and(...conditions) : undefined)
@@ -59,13 +65,13 @@ async function decorateTasks(
   );
 
   const agentRows = agentIds.length
-    ? await db.select().from(agents).where(inArray(agents.id, agentIds))
+    ? await getDatabase().select().from(agents).where(inArray(agents.id, agentIds))
     : [];
   const agentMap = new Map(agentRows.map((a) => [a.id, a]));
 
   const taskIds = rows.map((t) => t.id);
   const bidCounts = taskIds.length
-    ? await db
+    ? await getDatabase()
         .select({ taskId: bids.taskId, count: sql<number>`count(*)::int` })
         .from(bids)
         .where(inArray(bids.taskId, taskIds))
@@ -109,7 +115,7 @@ async function decorateTasks(
 }
 
 export async function getTaskById(id: string): Promise<TaskWithMetaDTO | null> {
-  const rows = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1);
+  const rows = await getDatabase().select().from(tasks).where(eq(tasks.id, id)).limit(1);
   if (rows.length === 0) return null;
   const [decorated] = await decorateTasks(rows);
   return decorated ?? null;
@@ -117,7 +123,7 @@ export async function getTaskById(id: string): Promise<TaskWithMetaDTO | null> {
 
 /** Bids for a task, joined with bidder agent, ordered by price ascending (leader first). */
 export async function getBidsForTask(taskId: string): Promise<BidDTO[]> {
-  const rows = await db
+  const rows = await getDatabase()
     .select({ bid: bids, agent: agents })
     .from(bids)
     .leftJoin(agents, eq(bids.bidderAgentId, agents.id))
@@ -128,18 +134,18 @@ export async function getBidsForTask(taskId: string): Promise<BidDTO[]> {
 }
 
 export async function getAgentById(id: string): Promise<AgentDTO | null> {
-  const rows = await db.select().from(agents).where(eq(agents.id, id)).limit(1);
+  const rows = await getDatabase().select().from(agents).where(eq(agents.id, id)).limit(1);
   return rows.length ? serializeAgent(rows[0]) : null;
 }
 
 export async function getAgents(): Promise<AgentDTO[]> {
-  const rows = await db.select().from(agents).orderBy(desc(agents.reputationScore));
+  const rows = await getDatabase().select().from(agents).orderBy(desc(agents.reputationScore));
   return rows.map(serializeAgent);
 }
 
 /** Task history for an agent (as buyer or worker). */
 export async function getAgentTaskHistory(agentId: string): Promise<TaskWithMetaDTO[]> {
-  const rows = await db
+  const rows = await getDatabase()
     .select()
     .from(tasks)
     .where(
@@ -157,7 +163,7 @@ export async function getAgentVerificationStats(agentId: string): Promise<{
   rejected: number;
   passRate: number;
 }> {
-  const rows = await db
+  const rows = await getDatabase()
     .select({ result: verifications.result })
     .from(verifications)
     .innerJoin(tasks, eq(verifications.taskId, tasks.id))
@@ -186,7 +192,7 @@ export async function getVerificationLog(filters: {
     conditions.push(eq(verifications.taskId, filters.taskId));
   }
 
-  const rows = await db
+  const rows = await getDatabase()
     .select({ verification: verifications, verifier: agents, task: tasks })
     .from(verifications)
     .leftJoin(agents, eq(verifications.verifierAgentId, agents.id))
@@ -209,19 +215,19 @@ export async function getMarketStats(): Promise<{
   totalVerifications: number;
   approvalRate: number;
 }> {
-  const [taskAgg] = await db
+  const [taskAgg] = await getDatabase()
     .select({
       open: sql<number>`count(*) filter (where ${tasks.status} in ('open','bidding'))::int`,
     })
     .from(tasks);
 
-  const [agentAgg] = await db
+  const [agentAgg] = await getDatabase()
     .select({
       active: sql<number>`count(*) filter (where ${agents.status} = 'active')::int`,
     })
     .from(agents);
 
-  const [verAgg] = await db
+  const [verAgg] = await getDatabase()
     .select({
       total: sql<number>`count(*)::int`,
       approved: sql<number>`count(*) filter (where ${verifications.result} in ('approved','partial'))::int`,
@@ -237,4 +243,59 @@ export async function getMarketStats(): Promise<{
     totalVerifications: total,
     approvalRate: total > 0 ? approved / total : 0,
   };
+}
+
+export interface ModelFilters {
+  provider?: string;
+  modelType?: string;
+  search?: string;
+}
+
+export async function getModels(filters: ModelFilters = {}): Promise<ModelDTO[]> {
+  const conditions = [];
+
+  if (filters.provider && filters.provider !== 'all') {
+    conditions.push(eq(models.provider, filters.provider));
+  }
+  if (filters.modelType && filters.modelType !== 'all') {
+    conditions.push(eq(models.modelType, filters.modelType as 'llm' | 'image'));
+  }
+  if (filters.search) {
+    conditions.push(
+      sql`${models.name} ILIKE ${'%' + filters.search + '%'} OR ${models.provider} ILIKE ${'%' + filters.search + '%'}`,
+    );
+  }
+
+  const rows = await getDatabase()
+    .select()
+    .from(models)
+    .where(conditions.length ? and(...conditions) : undefined)
+    .orderBy(desc(models.provider), asc(models.name));
+
+  return rows.map((m) => ({
+    id: m.id,
+    provider: m.provider,
+    name: m.name,
+    modelType: m.modelType as 'llm' | 'image',
+    inputPrice: String(m.inputPrice),
+    outputPrice: String(m.outputPrice),
+    codingBenchmark: m.codingBenchmark != null ? String(m.codingBenchmark) : null,
+    writingBenchmark: m.writingBenchmark != null ? String(m.writingBenchmark) : null,
+    generalBenchmark: m.generalBenchmark != null ? String(m.generalBenchmark) : null,
+    imageElo: m.imageElo != null ? String(m.imageElo) : null,
+    imageTextRanking: m.imageTextRanking ?? null,
+    imagePhotorealism: m.imagePhotorealism ?? null,
+    imageLatency: m.imageLatency ?? null,
+    isActive: m.isActive,
+    createdAt: m.createdAt.toISOString(),
+    updatedAt: m.updatedAt.toISOString(),
+  }));
+}
+
+export async function getModelProviders(): Promise<string[]> {
+  const rows = await getDatabase()
+    .selectDistinct({ provider: models.provider })
+    .from(models)
+    .orderBy(asc(models.provider));
+  return rows.map((r) => r.provider);
 }

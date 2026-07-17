@@ -1,34 +1,24 @@
-import Redis from 'ioredis';
+import { Redis } from '@upstash/redis';
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
 let client: Redis | null = null;
 
 export function getRedisClient(): Redis {
   if (!client) {
-    client = new Redis(REDIS_URL, {
-      maxRetriesPerRequest: 3,
-      enableReadyCheck: true,
-      retryStrategy(times: number) {
-        const delay = Math.min(times * 200, 2000);
-        return delay;
-      },
-    });
+    if (!UPSTASH_URL || !UPSTASH_TOKEN) {
+      throw new Error('UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required');
+    }
 
-    client.on('error', (err) => {
-      console.error('[Redis] Connection error:', err.message);
-    });
-
-    client.on('connect', () => {
-      console.log('[Redis] Connected');
+    client = new Redis({
+      url: UPSTASH_URL,
+      token: UPSTASH_TOKEN,
     });
   }
   return client;
 }
 
 export async function closeRedis(): Promise<void> {
-  if (client) {
-    await client.quit();
-    client = null;
-  }
+  client = null;
 }

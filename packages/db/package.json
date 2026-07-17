@@ -3,12 +3,12 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
+    "main": "dist/src/index.js",
+    "types": "dist/src/index.d.ts",
     "exports": {
         ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js"
+            "types": "./dist/src/index.d.ts",
+            "import": "./dist/src/index.js"
         }
     },
     "scripts": {
@@ -16,7 +16,7 @@
         "dev": "tsc --watch",
         "lint": "eslint src/",
         "typecheck": "tsc --noEmit",
-        "clean": "rm -rf dist",
+        "clean": "if exist dist rmdir /s /q dist",
         "db:generate": "node ../../node_modules/.pnpm/drizzle-kit@0.31.10/node_modules/drizzle-kit/bin.cjs generate",
         "db:migrate": "node ../../node_modules/.pnpm/drizzle-kit@0.31.10/node_modules/drizzle-kit/bin.cjs migrate",
         "db:push": "node ../../node_modules/.pnpm/drizzle-kit@0.31.10/node_modules/drizzle-kit/bin.cjs push",
@@ -29,6 +29,8 @@
         "drizzle-orm": "^0.38.0"
     },
     "devDependencies": {
-        "drizzle-kit": "^0.31.0"
+        "@types/node": "^20.10.0",
+        "drizzle-kit": "^0.31.0",
+        "typescript": "^5.3.3"
     }
 }

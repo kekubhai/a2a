@@ -10,7 +10,7 @@ export async function acquireTaskLock(
 ): Promise<boolean> {
   const redis = getRedisClient();
   const key = `${TASK_LOCK_PREFIX}${taskId}`;
-  const result = await redis.set(key, holderId, 'EX', ttlSeconds, 'NX');
+  const result = await redis.set(key, holderId, { ex: ttlSeconds, nx: true });
   return result === 'OK';
 }
 
@@ -26,7 +26,7 @@ export async function releaseTaskLock(taskId: string, holderId: string): Promise
     end
   `;
 
-  const result = await redis.eval(script, 1, key, holderId);
+  const result = await redis.eval(script, [key], [holderId]);
   return result === 1;
 }
 
@@ -46,7 +46,7 @@ export async function refreshTaskLock(
     end
   `;
 
-  const result = await redis.eval(script, 1, key, holderId, ttlSeconds.toString());
+  const result = await redis.eval(script, [key], [holderId, ttlSeconds.toString()]);
   return result === 1;
 }
 

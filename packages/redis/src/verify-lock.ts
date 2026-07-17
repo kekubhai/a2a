@@ -11,7 +11,7 @@ export async function acquireVerifyLock(
 ): Promise<boolean> {
   const redis = getRedisClient();
   const key = `${VERIFY_LOCK_PREFIX}${taskId}`;
-  const result = await redis.set(key, holderId, 'EX', ttlSeconds, 'NX');
+  const result = await redis.set(key, holderId, { ex: ttlSeconds, nx: true });
   return result === 'OK';
 }
 
@@ -27,7 +27,7 @@ export async function releaseVerifyLock(taskId: string, holderId: string): Promi
     end
   `;
 
-  const result = await redis.eval(script, 1, key, holderId);
+  const result = await redis.eval(script, [key], [holderId]);
   return result === 1;
 }
 
@@ -40,7 +40,7 @@ export async function enqueueVerification(taskId: string): Promise<void> {
 export async function dequeueVerification(): Promise<string | null> {
   const redis = getRedisClient();
   const key = `${VERIFY_QUEUE_PREFIX}pending`;
-  return await redis.spop(key);
+  return await redis.spop(key) ?? null;
 }
 
 export async function getVerifyQueueSize(): Promise<number> {

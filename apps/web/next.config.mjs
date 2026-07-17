@@ -6,6 +6,10 @@ const nextConfig = {
     // Lint is run separately in CI; don't block builds.
     ignoreDuringBuilds: true,
   },
+  env: {
+    // Ensure DATABASE_URL is available at build time
+    DATABASE_URL: process.env.DATABASE_URL,
+  },
   webpack: (config) => {
     // Solana / wallet libs reference optional native deps.
     config.externals = config.externals || [];
