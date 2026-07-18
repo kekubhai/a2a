@@ -9,6 +9,7 @@
                     "dev:web":  "pnpm --filter @a2a/web dev",
                     "dev:orchestrator":  "pnpm --filter @a2a/orchestrator dev",
                     "build":  "turbo run build",
+                    "build:web":  "turbo run build --filter=@a2a/web",
                     "lint":  "turbo run lint",
                     "format":  "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
                     "format:check":  "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",

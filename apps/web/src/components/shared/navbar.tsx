@@ -54,6 +54,7 @@ export function Navbar({ variant }: { variant: 'marketing' | 'app' }) {
             {links.map((item) => {
               const active =
                 variant === 'app' &&
+                !!pathname &&
                 (item.href === '/marketplace'
                   ? pathname === '/marketplace' || pathname.startsWith('/tasks')
                   : pathname.startsWith(item.href));

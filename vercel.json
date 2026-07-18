@@ -1,0 +1,5 @@
+{
+  "framework": "nextjs",
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "buildCommand": "turbo run build --filter=@a2a/shared-types --filter=@a2a/db --filter=@a2a/redis --filter=@a2a/sdk && pnpm --filter @a2a/web build"
+}
